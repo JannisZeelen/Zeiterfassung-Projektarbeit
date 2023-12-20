@@ -1,13 +1,11 @@
 import tkinter as tk
-from datetime import datetime as dt
-from datetime import timedelta as td
+from datetime import datetime as dt, timedelta as td
 import csv
 
 file = 'zeiterfassung.csv'
 
 
-# Datetime functions
-
+# ======= datetime functions =======
 def get_date():
     current_datetime = dt.now()
     return current_datetime.strftime("%d.%m.%Y")
@@ -21,8 +19,7 @@ def get_time():
     return current_time
 
 
-# Button Functions
-
+# ======= button functions =======
 def check_in():
     print(f"Checking you in!")
     button_check_in["state"] = "disabled"
@@ -42,11 +39,14 @@ def user_quit():
     root.quit()
 
 
-# def getinput():
-#     print(f"Hallo, {input1.get()}!")
-#     root.quit()  TODO Use this for a note to add when checking out
+# ======= .csv functions =======
+def get_status():
+    with open(file, 'r', newline='') as csv_file:
+        existing_data = list(csv.reader(csv_file))
 
-# .csv functions
+        if existing_data and len(existing_data[-1]) == 2:
+            return True
+
 
 def csv_write_check_in():
     with open(file, 'a', newline='') as csv_file:
@@ -79,30 +79,47 @@ def csv_write_check_out():
     print('Zeiten wurden gespeichert')
 
 
-current_date = get_date()  # Call get_date to get the current date
+current_date = get_date()
 
 root = tk.Tk()  # Fensternamme / Objekt
+root.title('Zeiterfassung')
 frame = tk.Frame()
 # Date and Time Labels
-label_top = tk.Label(root, text='Hallo, Jannis')  # TODO: maybe with var in future with user model
+label_top = tk.Label(root, text='Hallo, Jannis!', font=('Helvetica', 16))  # TODO: maybe with var in future with user model
 label_top.grid(row=0, column=0, columnspan=2, sticky='nsew')
 
-label_date = tk.Label(root, text=current_date)
+label_date = tk.Label(root, text=current_date, font=('Helvetica', 16))
 label_date.grid(row=1, column=0)
 
-label_time = tk.Label(root, text="")
+label_time = tk.Label(root, font=('Helvetica', 16))
 label_time.grid(row=1, column=1)
 
 get_time()
 
-button_check_in = tk.Button(text='Check in', command=check_in)
-button_check_out = tk.Button(text='Check out', command=check_out)
+button_check_in = tk.Button(text='Check in', command=check_in, state="disabled")
+if not get_status():
+    button_check_in['state'] = "normal"
+button_check_out = tk.Button(text='Check out', command=check_out, state="disabled")
+if get_status():
+    button_check_out['state'] = "normal"
+
+# TODO Make buttons really sticky
+
 button_user_quit = tk.Button(text='Quit', command=user_quit)
 button_check_in.grid(row=2, column=0, columnspan=2, sticky='nsew')
 button_check_out.grid(row=3, column=0, columnspan=2, sticky='nsew')
 button_user_quit.grid(row=4, column=0, columnspan=2, sticky='nswe')
-root.geometry("+1000+500")
+
+for i in range(2):
+    root.columnconfigure(i, weight=1)
+
+root.geometry("250x150+1000+500")
 
 root.mainloop()  # Eventloop starten
 
 # TODO: Kommentare einsprachig
+# TODO: Wenn Arbeitszeit über x dann Pause abzhiehen
+# TODO: Tkinter schöner machen
+# TODO: CSV über matplotlib ausgeben
+# TODO use a note to add when checking out
+# TODO make connection to github
