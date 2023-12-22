@@ -1,7 +1,4 @@
-conda activate alfatraining
-pip install sv-ttk
-
-import matplotlib.pyplot as plt
 matplotlib~=3.8.0
 numpy~=1.26.2
 pandas~=2.1.4
+sv-ttk

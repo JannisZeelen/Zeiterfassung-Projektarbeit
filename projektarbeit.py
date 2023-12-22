@@ -78,7 +78,7 @@ def csv_write_check_out():
             base_date = dt(1900, 1, 1)
             worktime = base_date + timedelta
             print(worktime)
-            worktime_float = get_worktime_float(worktime.strftime("%H:%M:%S"))
+            # worktime_float = get_worktime_float(worktime.strftime("%H:%M:%S"))
             existing_data[-1].extend([get_time(), worktime.strftime("%H:%M:%S")])
 
             # Move the file cursor to the beginning to overwrite the existing data
