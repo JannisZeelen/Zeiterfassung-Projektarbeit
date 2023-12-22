@@ -1,9 +1,12 @@
+import locale
 import tkinter as tk
 from tkinter import ttk
 from datetime import datetime as dt, timedelta as td
 import csv
 import matplotlib.pyplot as plt
 import sv_ttk
+
+locale.setlocale(locale.LC_TIME, 'de_DE')
 
 # Dateipfad für die Zeiterfassungsdaten
 file = 'zeiterfassung.csv'
@@ -32,21 +35,17 @@ def get_worktime_float(time):
     return worktime_float
 
 
-# ======= Button-Funktionen =======
+# ======= ttkinter-Funktionen =======
 def check_in():
-    # Check-in Button deaktivieren, Check-out Button aktivieren, Aufrufen von Check-in Funktion
-    print(f"Checking you in!")  # TODO remove this?
-    button_check_in["state"] = "disabled"
-    button_check_out["state"] = "active"
-    csv_write_check_in()
-
-
-def check_out():
-    # Check-out Button deaktivieren, Check-in Button aktivieren, Aufrufen von Check-out Funktion
-    print(f"Checking you out!")
-    button_check_out["state"] = "disabled"
-    button_check_in["state"] = "active"
-    csv_write_check_out()
+    # Überprüft den aktuellen Status bei Check-in/Check-out und ruft die jeweilige Funktion zum Schreiben auf
+    if not get_status():
+        button_check_in.config(text='Check-out')
+        csv_write_check_in()
+        print(f"Checking you in!")
+    else:
+        button_check_in.config(text='Check-in')
+        csv_write_check_out()
+        print(f"Checking you out!")
 
 
 def user_quit():
@@ -54,15 +53,41 @@ def user_quit():
     root.quit()
 
 
+def highlight_clear(event):
+    current = dropdown_month.get()
+    dropdown_month.set('')
+    dropdown_month.set(current)
+
+
 # ======= .csv Funktionen =======
 def get_status():
-    # Überprüfung, ob bereits eingecheckt worden ist, dementsprechene Button De-/Aktivierung
+    # Überprüfung, ob bereits eingecheckt worden ist, returns Bool
     with open(file, 'r', newline='') as csv_file:
         existing_data = list(csv.reader(csv_file))
 
         if existing_data and len(existing_data[-1]) == 2:
-            button_check_in["text"] = "You are checked in."
             return True
+        else:
+            return False
+
+
+def get_worked_months():
+    with open('zeiterfassung.csv', 'r') as csv_file:
+        reader = csv.reader(csv_file)
+        rows = list(reader)
+
+    worked_months_year = []
+    for row in rows[1:]:
+        month_year = row[0][3:]
+        if month_year in worked_months_year:
+            pass
+        else:
+            worked_months_year.append(month_year)
+    formatted = []
+    for month in worked_months_year:
+        formatted.append(dt.strptime(month, '%m.%Y').strftime('%B %Y'))
+    formatted.reverse()
+    return formatted
 
 
 def csv_write_check_in():
@@ -70,7 +95,6 @@ def csv_write_check_in():
     with open(file, 'a', newline='') as csv_file:
         csv_writer = csv.writer(csv_file)
         csv_writer.writerow([get_date(), get_time()])
-    print('Zeiten wurden gespeichert')
 
 
 def csv_write_check_out():
@@ -97,27 +121,33 @@ def csv_write_check_out():
             csv_writer = csv.writer(csv_file)
             csv_writer.writerows(existing_data)
 
-    print('Zeiten wurden gespeichert')
+
+#     # Pie Plot in %
+#     ax2.pie(work_hours, labels=last_5_days, autopct='%1.1f%%', startangle=90,
+#             colors=['skyblue', 'lightcoral', 'lightgreen', 'gold', 'lightpink'])
+#     ax2.set_title('Aufteilung Arbeitszeiten letzten 5 Tage')
+#     plt.tight_layout()
 
 
-def create_plot(work_hours, last_5_days, last_5_days_no_year):
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
+def create_plot(work_hours, last_days, last_days_no_year, plot_title):
+    fig, ax = plt.subplots(figsize=(10, 5))
 
     # Bar Plot
-    ax1.bar(last_5_days_no_year, work_hours, color='skyblue')
-    ax1.set_xlabel('Wochentag')
-    ax1.set_ylabel('Gesamtarbeitsstunden')
-    ax1.set_title('Arbeitszeiten der letzten 5 Tage')
+    ax.bar(last_days_no_year, work_hours, color='skyblue')
 
-    # Pie Plot in %
-    ax2.pie(work_hours, labels=last_5_days, autopct='%1.1f%%', startangle=90,
-            colors=['skyblue', 'lightcoral', 'lightgreen', 'gold', 'lightpink'])
-    ax2.set_title('Aufteilung Arbeitszeiten letzten 5 Tage')
+    average_work_hours = sum(work_hours) / len(work_hours)
+    ax.axhline(y=average_work_hours, color='red', linestyle='--', label='Durchschnitt')
+
+    ax.set_xlabel('Datum')
+    ax.set_ylabel('Gesamtarbeitsstunden')
+    ax.set_title(plot_title)
+    plt.xticks(rotation=45, ha='right')
+    ax.legend()
     plt.tight_layout()
 
 
 def math_plot():
-    # TODO: Funktion derzeit: Bar plot der letzten 5 tage float stunden arbeitszeit. / andere ideen besser? mehrere plots
+    # Funktion zur Berechnung der Arbeitsstunden, Auslesen der Reihen mit dem gleichen Monat
     with open('zeiterfassung.csv', 'r') as csv_file:
         reader = csv.reader(csv_file)
         rows = list(reader)
@@ -127,78 +157,101 @@ def math_plot():
 
     # Datum und Arbeitszeit in Listen speichern
     for row in rows[1:]:
-        date = row[0]
-        work_hours = get_worktime_float(row[3])
+        if len(row) >=4:
+            date = row[0]
+            work_hours = get_worktime_float(row[3])
 
-        # Wenn der Tag bereits im Dictionary ist, addiere die Arbeitszeit
-        if date in work_hours_per_day:
-            work_hours_per_day[date] += work_hours
-        else:
-            work_hours_per_day[date] = work_hours
+            # Wenn der Tag im gewünschten Monat und Jahr ist, addiere die Arbeitszeit
+            if date.endswith(dt.strptime(dropdown_month.get(), '%B %Y').strftime('%m.%Y')):
+                if date in work_hours_per_day:
+                    work_hours_per_day[date] += work_hours
+                else:
+                    work_hours_per_day[date] = work_hours
 
     # Bereitstellen von Listen für die Ploterstellung
-    last_5_days = list(work_hours_per_day.keys())[-5:]
-    last_5_days_no_year = [day[:-4] for day in last_5_days]
-    work_hours = [work_hours_per_day[day] for day in last_5_days]
+    last_days = list(work_hours_per_day.keys())
+    last_days_no_year = [day[:-4] for day in last_days]
+    work_hours = [work_hours_per_day[day] for day in last_days]
 
     # Funktion zum Erstellen der Plots aufrufen
-    create_plot(work_hours, last_5_days, last_5_days_no_year)
+    create_plot(work_hours, last_days, last_days_no_year, f'Arbeitszeiten {dropdown_month.get()}')
 
     plt.show()
 
 
 current_date = get_date()
 
-root = tk.Tk()  # Fensternamme / Objekt
-
+# Create main Tkinter window
+root = tk.Tk()
 root.title('Zeiterfassung')
-frame = ttk.Frame()
 
-# styling ttk
+# Create frames with borders
+frame_0_0 = tk.Frame(root, highlightbackground='blue', highlightthickness=2, padx=15, pady=5, borderwidth=15)
+frame_1_0 = tk.Frame(root, highlightbackground='blue', highlightthickness=2, padx=15, pady=5, borderwidth=15)
+frame_0_1 = tk.Frame(root, highlightbackground='blue', highlightthickness=2, padx=15, pady=5, borderwidth=15)
+frame_1_1 = tk.Frame(root, highlightbackground='blue', highlightthickness=2, padx=15, pady=5, borderwidth=15)
+
+# Styling for ttk
 style = ttk.Style()
 sv_ttk.set_theme("dark")
+style.configure('TFrame')
 
 # Date and Time Labels
-label_top = ttk.Label(root, text='Hallo, Jannis!', style='TLabel')  # TODO: maybe with var in future with user model
-label_top.grid(row=0, column=0, columnspan=2, sticky='nsew')
+label_hello = ttk.Label(frame_0_0, text='Hallo, Jannis!', anchor="center", justify="center")
+label_placeholder = ttk.Label(frame_1_1, text='Placeholder', anchor="center", justify="center")
+label_timetracking = ttk.Label(frame_1_0, text='Zeiterfassung', anchor="center", justify="center")
+label_space = ttk.Label(frame_0_0, text='-------------', anchor="center", justify="center")
 
-label_date = ttk.Label(root, text=current_date, font=('Helvetica', 16))
-label_date.grid(row=1, column=0)
+label_date = ttk.Label(frame_0_0, text=current_date, anchor='center', justify='center')
+label_time = ttk.Label(frame_0_0, anchor='center', justify='center')
 
-label_time = ttk.Label(root, font=('Helvetica', 16))
-label_time.grid(row=1, column=1)
-
+# Buttons and Combobox
 get_time()
-
-button_check_in = ttk.Button(text='Check in', command=check_in, state="disabled")
-if not get_status():
-    button_check_in['state'] = "normal"
-button_check_out = ttk.Button(text='Check out', command=check_out, state="disabled")
+worked_months = get_worked_months()
+button_check_in = ttk.Button(frame_1_0, text='Check-in', command=check_in, compound="center")
 if get_status():
-    button_check_out['state'] = "normal"
-
-button_plot = ttk.Button(text='Show working times', command=math_plot)
+    button_check_in.config(text='Check-out')
+button_plot = ttk.Button(frame_0_1, text='Arbeitszeit aufrufen', command=math_plot)
 button_user_quit = ttk.Button(text='Quit', command=user_quit)
 
-button_plot.grid(row=2, column=0, columnspan=2, sticky='nsew')
-button_check_in.grid(row=3, column=0, columnspan=2, sticky='nsew')
-button_check_out.grid(row=4, column=0, columnspan=2, sticky='nsew')
-button_user_quit.grid(row=5, column=0, columnspan=2, sticky='nsew')
+dropdown_month = ttk.Combobox(frame_0_1, values=worked_months, state='readonly')
+dropdown_month.current(0)
+dropdown_month.bind("<<ComboboxSelected>>", highlight_clear)
 
-for i in range(2):
+# Grid placement
+frame_0_0.grid(row=0, column=0, pady=15, padx=15, sticky='nsew')
+frame_0_0.grid_columnconfigure(0, weight=1)
+frame_1_0.grid(row=1, column=0, pady=15, padx=15, sticky='nsew')
+frame_0_1.grid(row=0, column=1, pady=15, padx=15, sticky='nsew')
+frame_1_1.grid(row=1, column=1, pady=15, padx=15, sticky='nsew')
+label_hello.grid(row=0, column=0, sticky='nsew')
+label_placeholder.grid(row=0, column=0, sticky='nsew')
+label_space.grid(row=1, column=0, sticky='nsew')
+label_timetracking.grid(row=1, column=0, sticky='nsew')
+label_date.grid(row=2, column=0, sticky='nsew')
+label_time.grid(row=3, column=0, sticky='nsew')
+button_plot.grid(row=3, column=1, sticky='nsew', pady=5)
+button_check_in.grid(row=2, column=0, sticky='nsew', pady=5)
+button_user_quit.grid(row=5, column=0, columnspan=2)
+dropdown_month.grid(row=0, column=1)
+
+# Configure column weights
+for i in range(6):
     root.columnconfigure(i, weight=1)
 
-root.geometry("500x300+1000+500")
+# Set window geometry
+root.geometry("472x330+1000+500")
 
-root.mainloop()  # Eventloop starten
+# Start the Tkinter event loop
+root.mainloop()
 
 # TODO: Kommentare einsprachig ( deutsch für präsi )
 # TODO: Wenn Arbeitszeit über x dann Pause abziehen
+# TODO: Pause als zweiten Balken ins Matplotlib
+# TODO: Pause Button
 # TODO: Tkinter schöner machen
-# TODO: CSV über matplotlib ausgeben
-# TODO make connection to github
-# TODO Pause button und abziehen von delta
-# TODO Bild von alfa logo
+# TODO Bild von alfa logo??
 # TODO Project vorstellen: 15 Minuten Zeit
 # TODO überprüfung wenn erst am nächsten tag ausgecheckt wird(vorheriger tag bis 24 dann neuer eintrag?
 # TODO Alles erklären könnnen
+# TODO Focus entfernen von geklickten Buttons
