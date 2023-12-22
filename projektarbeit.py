@@ -1,6 +1,9 @@
 import tkinter as tk
+from tkinter import ttk
 from datetime import datetime as dt, timedelta as td
 import csv
+import matplotlib.pyplot as plt
+import sv_ttk
 
 file = 'zeiterfassung.csv'
 
@@ -19,6 +22,14 @@ def get_time():
     return current_time
 
 
+def get_worktime_float(time):
+    formatted_time = dt.strptime(time, "%H:%M:%S")
+    total_seconds = td(hours=formatted_time.hour, minutes=formatted_time.minute,
+                       seconds=formatted_time.second).total_seconds()
+    worktime_float = total_seconds / 3600.0
+    return worktime_float
+
+
 # ======= button functions =======
 def check_in():
     print(f"Checking you in!")
@@ -32,7 +43,6 @@ def check_out():
     button_check_out["state"] = "disabled"
     button_check_in["state"] = "active"
     csv_write_check_out()
-    # function call / function to write in csv TODO
 
 
 def user_quit():
@@ -45,6 +55,7 @@ def get_status():
         existing_data = list(csv.reader(csv_file))
 
         if existing_data and len(existing_data[-1]) == 2:
+            button_check_in["text"] = "You are checked in."
             return True
 
 
@@ -66,7 +77,8 @@ def csv_write_check_out():
             timedelta = check_out_time - check_in_time
             base_date = dt(1900, 1, 1)
             worktime = base_date + timedelta
-
+            print(worktime)
+            worktime_float = get_worktime_float(worktime.strftime("%H:%M:%S"))
             existing_data[-1].extend([get_time(), worktime.strftime("%H:%M:%S")])
 
             # Move the file cursor to the beginning to overwrite the existing data
@@ -79,47 +91,81 @@ def csv_write_check_out():
     print('Zeiten wurden gespeichert')
 
 
+def show_plot():
+    # TODO: Funktion derzeit: Bar plot der letzten 5 tage float stunden arbeitszeit. / andere ideen besser?
+    with open('zeiterfassung.csv', 'r') as csv_file:
+        reader = csv.reader(csv_file)
+        rows = list(reader)[-5:]
+
+    work_hours = []
+    days = []
+
+    for row in rows:
+        work_hours.append(get_worktime_float(row[3]))
+        days.append(row[0])
+
+    # work_hours.reverse()
+    # days.reverse()
+
+    plt.bar(days, work_hours, color='skyblue')
+    plt.xlabel('Wochentag')
+    plt.ylabel('Arbeitsstunden')
+    plt.title('Arbeitszeiten letzte 5 Tage')
+    plt.show()
+
+
 current_date = get_date()
 
 root = tk.Tk()  # Fensternamme / Objekt
+
 root.title('Zeiterfassung')
-frame = tk.Frame()
+frame = ttk.Frame()
+
+# styling ttk
+style = ttk.Style()
+sv_ttk.set_theme("dark")
+
 # Date and Time Labels
-label_top = tk.Label(root, text='Hallo, Jannis!', font=('Helvetica', 16))  # TODO: maybe with var in future with user model
+label_top = ttk.Label(root, text='Hallo, Jannis!', style='TLabel')  # TODO: maybe with var in future with user model
 label_top.grid(row=0, column=0, columnspan=2, sticky='nsew')
 
-label_date = tk.Label(root, text=current_date, font=('Helvetica', 16))
+label_date = ttk.Label(root, text=current_date, font=('Helvetica', 16))
 label_date.grid(row=1, column=0)
 
-label_time = tk.Label(root, font=('Helvetica', 16))
+label_time = ttk.Label(root, font=('Helvetica', 16))
 label_time.grid(row=1, column=1)
 
 get_time()
 
-button_check_in = tk.Button(text='Check in', command=check_in, state="disabled")
+button_check_in = ttk.Button(text='Check in', command=check_in, state="disabled")
 if not get_status():
     button_check_in['state'] = "normal"
-button_check_out = tk.Button(text='Check out', command=check_out, state="disabled")
+button_check_out = ttk.Button(text='Check out', command=check_out, state="disabled")
 if get_status():
     button_check_out['state'] = "normal"
 
-# TODO Make buttons really sticky
+button_plot = ttk.Button(text='Show working times', command=show_plot)
+button_user_quit = ttk.Button(text='Quit', command=user_quit)
 
-button_user_quit = tk.Button(text='Quit', command=user_quit)
-button_check_in.grid(row=2, column=0, columnspan=2, sticky='nsew')
-button_check_out.grid(row=3, column=0, columnspan=2, sticky='nsew')
-button_user_quit.grid(row=4, column=0, columnspan=2, sticky='nswe')
+button_plot.grid(row=2, column=0, columnspan=2, sticky='nsew')
+button_check_in.grid(row=3, column=0, columnspan=2, sticky='nsew')
+button_check_out.grid(row=4, column=0, columnspan=2, sticky='nsew')
+button_user_quit.grid(row=5, column=0, columnspan=2, sticky='nsew')
 
 for i in range(2):
     root.columnconfigure(i, weight=1)
 
-root.geometry("250x150+1000+500")
+root.geometry("500x300+1000+500")
 
 root.mainloop()  # Eventloop starten
 
-# TODO: Kommentare einsprachig
-# TODO: Wenn Arbeitszeit über x dann Pause abzhiehen
+# TODO: Kommentare einsprachig ( deutsch für präsi )
+# TODO: Wenn Arbeitszeit über x dann Pause abziehen
 # TODO: Tkinter schöner machen
 # TODO: CSV über matplotlib ausgeben
-# TODO use a note to add when checking out
 # TODO make connection to github
+# TODO Pause button und abziehen von delta
+# TODO Bild von alfa logo
+# TODO alles auf ttk ändern
+# TODO Berechnung von timedelta mit tagen einbeziehen sonst bei über 24h von null
+# TODO Project vorstellen: 15 Minuten Zeit
