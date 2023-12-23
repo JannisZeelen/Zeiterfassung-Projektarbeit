@@ -1,6 +1,7 @@
 import locale
 import tkinter as tk
 from tkinter import ttk
+from tkinter import PhotoImage
 from datetime import datetime as dt, timedelta as td
 import csv
 import matplotlib.pyplot as plt
@@ -157,7 +158,7 @@ def math_plot():
 
     # Datum und Arbeitszeit in Listen speichern
     for row in rows[1:]:
-        if len(row) >=4:
+        if len(row) >= 4:
             date = row[0]
             work_hours = get_worktime_float(row[3])
 
@@ -185,16 +186,25 @@ current_date = get_date()
 root = tk.Tk()
 root.title('Zeiterfassung')
 
+# imagelabel
+imagepath = 'img/bg.png'  #
+img = PhotoImage(file=imagepath)
+canvas_bg = tk.Canvas(root, width=img.width()*0.5, height=img.height()*0.5)
+canvas_bg.create_image(0, 0, anchor=tk.NW, image=img)
+canvas_bg.grid(row=0, column=0, rowspan=6, columnspan=6, sticky='nsew')
+canvas_bg.lower(tk.ALL)
+
 # Create frames with borders
-frame_0_0 = tk.Frame(root, highlightbackground='blue', highlightthickness=2, padx=15, pady=5, borderwidth=15)
-frame_1_0 = tk.Frame(root, highlightbackground='blue', highlightthickness=2, padx=15, pady=5, borderwidth=15)
-frame_0_1 = tk.Frame(root, highlightbackground='blue', highlightthickness=2, padx=15, pady=5, borderwidth=15)
-frame_1_1 = tk.Frame(root, highlightbackground='blue', highlightthickness=2, padx=15, pady=5, borderwidth=15)
+frame_0_0 = tk.Frame(root, highlightbackground='black', highlightthickness=2, padx=15, pady=5, borderwidth=15)
+frame_1_0 = tk.Frame(root, highlightbackground='black', highlightthickness=2, padx=15, pady=5, borderwidth=15)
+frame_0_1 = tk.Frame(root, highlightbackground='black', highlightthickness=2, padx=15, pady=5, borderwidth=15)
+frame_1_1 = tk.Frame(root, highlightbackground='black', highlightthickness=2, padx=15, pady=5, borderwidth=15)
 
 # Styling for ttk
 style = ttk.Style()
 sv_ttk.set_theme("dark")
 style.configure('TFrame')
+
 
 # Date and Time Labels
 label_hello = ttk.Label(frame_0_0, text='Hallo, Jannis!', anchor="center", justify="center")
@@ -220,7 +230,6 @@ dropdown_month.bind("<<ComboboxSelected>>", highlight_clear)
 
 # Grid placement
 frame_0_0.grid(row=0, column=0, pady=15, padx=15, sticky='nsew')
-frame_0_0.grid_columnconfigure(0, weight=1)
 frame_1_0.grid(row=1, column=0, pady=15, padx=15, sticky='nsew')
 frame_0_1.grid(row=0, column=1, pady=15, padx=15, sticky='nsew')
 frame_1_1.grid(row=1, column=1, pady=15, padx=15, sticky='nsew')
@@ -232,15 +241,17 @@ label_date.grid(row=2, column=0, sticky='nsew')
 label_time.grid(row=3, column=0, sticky='nsew')
 button_plot.grid(row=3, column=1, sticky='nsew', pady=5)
 button_check_in.grid(row=2, column=0, sticky='nsew', pady=5)
-button_user_quit.grid(row=5, column=0, columnspan=2)
+button_user_quit.grid(row=5, column=0, columnspan=2, padx=15, pady=15, sticky='nsew')
 dropdown_month.grid(row=0, column=1)
+
 
 # Configure column weights
 for i in range(6):
     root.columnconfigure(i, weight=1)
 
 # Set window geometry
-root.geometry("472x330+1000+500")
+# root.geometry("472x330+1000+500")
+root.geometry("483x340+1000+500")
 
 # Start the Tkinter event loop
 root.mainloop()
