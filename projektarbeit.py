@@ -310,7 +310,8 @@ root.mainloop()
 # TODO: Tkinter schöner machen
 # TODO Bild von alfa logo??
 # TODO Project vorstellen: 15 Minuten Zeit
-# TODO überprüfung wenn erst am nächsten tag ausgecheckt wird(vorheriger tag bis 24 dann neuer eintrag?
+# TODO überprüfung wenn erst am nächsten tag ausgecheckt wird(vorheriger tag bis 24 dann neuer eintrag? VLLT AUCH NICHT
 # TODO Alles erklären könnnen
 # TODO Focus entfernen von geklickten Buttons
 # TODO bottom right frame for current worktime, which updates
+# TODO calculate break times by getting difference of previous check out time and checkin time of second entry of same day
