@@ -15,21 +15,26 @@ file = 'zeiterfassung.csv'
 
 # ======= Datetime Funktionen =======
 def get_date():
-    current_datetime = dt.now()
-    return current_datetime.strftime("%d.%m.%Y")
+    current_dt = dt.now()
+    return current_dt.strftime("%d.%m.%Y")
 
 
 def get_time():
-    current_datetime = dt.now()
-    current_time = current_datetime.strftime("%H:%M:%S")
+    current_dt = dt.now()
+    current_time = current_dt.strftime("%H:%M:%S")
     label_time.config(text=current_time)
     root.after(1000, get_time)
     return current_time
 
 
+def get_date_time():
+    current_dt = dt.now()
+    return current_dt
+
+
 def get_worktime_float(time):
-    # FFunktion, um die Arbeitszeit in Stunden als Float zu erhalten
-    formatted_time = dt.strptime(time, "%H:%M:%S")
+    # Funktion, um die Arbeitszeit in Stunden als Float zu erhalten
+    formatted_time = dt.strptime(time, "%d.%m.%Y-%H:%M:%S")
     total_seconds = td(hours=formatted_time.hour, minutes=formatted_time.minute,
                        seconds=formatted_time.second).total_seconds()
     worktime_float = total_seconds / 3600.0
@@ -55,6 +60,7 @@ def user_quit():
 
 
 def highlight_clear(event):
+    # Funktion um ausgewähltes Dropdown Element nicht markiert darzustellen
     current = dropdown_month.get()
     dropdown_month.set('')
     dropdown_month.set(current)
@@ -66,7 +72,7 @@ def get_status():
     with open(file, 'r', newline='') as csv_file:
         existing_data = list(csv.reader(csv_file))
 
-        if existing_data and len(existing_data[-1]) == 2:
+        if existing_data and len(existing_data[-1]) == 1:
             return True
         else:
             return False
@@ -77,25 +83,28 @@ def get_worked_months():
         reader = csv.reader(csv_file)
         rows = list(reader)
 
-    worked_months_year = []
-    for row in rows[1:]:
-        month_year = row[0][3:]
-        if month_year in worked_months_year:
-            pass
-        else:
-            worked_months_year.append(month_year)
-    formatted = []
-    for month in worked_months_year:
-        formatted.append(dt.strptime(month, '%m.%Y').strftime('%B %Y'))
-    formatted.reverse()
+    worked_months_year = set()
+    for row in rows[:]:
+        if len(row) == 3:
+            date_time_str = row[0]
+            try:
+                date_time = dt.strptime(date_time_str, "%d.%m.%Y-%H:%M:%S")
+                month_year = date_time.strftime('%m.%Y')
+                worked_months_year.add(month_year)
+            except ValueError:
+                # Skip entries that do not match the expected format
+                continue
+
+    formatted = sorted([dt.strptime(month, '%m.%Y').strftime('%B %Y') for month in worked_months_year],
+                       key=lambda x: dt.strptime(x, '%B %Y'), reverse=True)
     return formatted
 
 
 def csv_write_check_in():
-    # Datum + Check-in Zeit in neue Zeile schreiben
+    # Check-in Datum und Zeit in neue Zeile schreiben
     with open(file, 'a', newline='') as csv_file:
         csv_writer = csv.writer(csv_file)
-        csv_writer.writerow([get_date(), get_time()])
+        csv_writer.writerow([get_date_time().strftime("%d.%m.%Y-%H:%M:%S")])
 
 
 def csv_write_check_out():
@@ -104,23 +113,45 @@ def csv_write_check_out():
         # Bestehende Daten in Variable zwischenspeichern
         existing_data = list(csv.reader(csv_file))
 
-        # Überprüfung, ob bereits eingecheckt worde, falls ja Check-in Zeit speichern
-        if existing_data and len(existing_data[-1]) == 2:
-            check_in_time = dt.strptime(existing_data[-1][1], "%H:%M:%S")
-            check_out_time = dt.strptime(get_time(), "%H:%M:%S")
+        # Überprüfung, ob bereits eingecheckt worden ist, falls ja Check-in Zeit und Datum speichern
+        if existing_data and len(existing_data[-1]) == 1:
+            check_in_dt_str = existing_data[-1][0]
 
-            # Berechne die Arbeitszeit für den aktuellen Tag
-            base_date = dt(1900, 1, 1)
-            timedelta = check_out_time - check_in_time
-            worktime = base_date + timedelta
+            # Get Check-in Zeit und Datum
+            check_in_dt = dt.strptime(check_in_dt_str, "%d.%m.%Y-%H:%M:%S")
 
-            # Erweitern der Check-out und Arbeitszeit
-            existing_data[-1].extend([get_time(), worktime.strftime("%H:%M:%S")])
+            # Get Check-out Zeit und Datum
+            check_out_dt = get_date_time()
+            check_out_dt_str = check_out_dt.strftime("%d.%m.%Y-%H:%M:%S")
+            check_out_date, check_out_time = check_out_dt_str.split('-')
 
-            # An Beginn der Datei springen und neue Daten schreiben
-            csv_file.seek(0)
-            csv_writer = csv.writer(csv_file)
-            csv_writer.writerows(existing_data)
+            # Wenn Check-out an anderem Tag als Check-in
+            if check_out_date != check_in_dt.strftime("%d.%m.%Y"):
+                # Calculate worktime for the entire period between check-in and check-out
+                timedelta = check_out_dt - check_in_dt
+                base_date = dt(1900, 1, 1)
+                worktime = base_date + timedelta
+
+                # Update the existing check-in entry with the check-out information
+                existing_data[-1] = [check_in_dt_str, check_out_dt_str, worktime.strftime('%H:%M:%S')]
+
+                # An Beginn der Datei springen und neue Daten schreiben
+                csv_file.seek(0)
+                csv_writer = csv.writer(csv_file)
+                csv_writer.writerows(existing_data)
+            else:
+                # Arbeitszeit für heutigen Tag berechnen
+                timedelta = check_out_dt - check_in_dt
+                base_date = dt(1900, 1, 1)
+                worktime = base_date + timedelta
+
+                # Erweitern von bestehendem .csv Eintrag in der existing_data Kopie
+                existing_data[-1].extend([check_out_dt_str, worktime.strftime("%H:%M:%S")])
+
+                # Zum Anfang der .csv Datei springen und neue Daten schreiben
+                csv_file.seek(0)
+                csv_writer = csv.writer(csv_file)
+                csv_writer.writerows(existing_data)
 
 
 #     # Pie Plot in %
@@ -148,35 +179,53 @@ def create_plot(work_hours, last_days, last_days_no_year, plot_title):
 
 
 def math_plot():
-    # Funktion zur Berechnung der Arbeitsstunden, Auslesen der Reihen mit dem gleichen Monat
+    # Function to calculate worked hours, read rows with the same month
     with open('zeiterfassung.csv', 'r') as csv_file:
         reader = csv.reader(csv_file)
         rows = list(reader)
 
-    # Leeres Dictionary für zukünftige Date:Worktime Werte
+    # Empty dictionary for future date: worktime values
     work_hours_per_day = {}
 
-    # Datum und Arbeitszeit in Listen speichern
+    # Date and worktime in lists
     for row in rows[1:]:
-        if len(row) >= 4:
-            date = row[0]
-            work_hours = get_worktime_float(row[3])
+        if len(row) >= 3:
+            date_time_str = row[0]
 
-            # Wenn der Tag im gewünschten Monat und Jahr ist, addiere die Arbeitszeit
-            if date.endswith(dt.strptime(dropdown_month.get(), '%B %Y').strftime('%m.%Y')):
-                if date in work_hours_per_day:
-                    work_hours_per_day[date] += work_hours
+            try:
+                # Attempt to convert date_time_str to datetime object
+                date_time = dt.strptime(date_time_str, "%d.%m.%Y-%H:%M:%S")
+            except ValueError:
+                # Skip entries that do not match the expected format
+                print(f"Skipping entry with unexpected format: {date_time_str}")
+                continue
+
+            check_out_date_str = date_time.strftime("%d.%m.%Y")
+
+            # Debug print statements
+            print(f"date_time_str: {date_time_str}")
+            print(f"check_out_date_str: {check_out_date_str}")
+
+            work_hours = get_worktime_float(date_time_str)
+
+            # Check if the day is in the selected month and year
+            selected_month_year = dt.strptime(dropdown_month.get(), '%B %Y').strftime('%m.%Y')
+            if check_out_date_str.endswith(selected_month_year):
+                # Add work hours to the corresponding day
+                if check_out_date_str in work_hours_per_day:
+                    work_hours_per_day[check_out_date_str] += work_hours
                 else:
-                    work_hours_per_day[date] = work_hours
+                    work_hours_per_day[check_out_date_str] = work_hours
 
-    # Bereitstellen von Listen für die Ploterstellung
+    # Prepare lists for plot creation
     last_days = list(work_hours_per_day.keys())
     last_days_no_year = [day[:-4] for day in last_days]
     work_hours = [work_hours_per_day[day] for day in last_days]
 
-    # Funktion zum Erstellen der Plots aufrufen
+    # Call the function to create the plot
     create_plot(work_hours, last_days, last_days_no_year, f'Arbeitszeiten {dropdown_month.get()}')
 
+    # Display the plot
     plt.show()
 
 
@@ -189,7 +238,7 @@ root.title('Zeiterfassung')
 # imagelabel
 imagepath = 'img/bg.png'  #
 img = PhotoImage(file=imagepath)
-canvas_bg = tk.Canvas(root, width=img.width()*0.5, height=img.height()*0.5)
+canvas_bg = tk.Canvas(root, width=img.width() * 0.5, height=img.height() * 0.5)
 canvas_bg.create_image(0, 0, anchor=tk.NW, image=img)
 canvas_bg.grid(row=0, column=0, rowspan=6, columnspan=6, sticky='nsew')
 canvas_bg.lower(tk.ALL)
@@ -204,7 +253,6 @@ frame_1_1 = tk.Frame(root, highlightbackground='black', highlightthickness=2, pa
 style = ttk.Style()
 sv_ttk.set_theme("dark")
 style.configure('TFrame')
-
 
 # Date and Time Labels
 label_hello = ttk.Label(frame_0_0, text='Hallo, Jannis!', anchor="center", justify="center")
@@ -244,7 +292,6 @@ button_check_in.grid(row=2, column=0, sticky='nsew', pady=5)
 button_user_quit.grid(row=5, column=0, columnspan=2, padx=15, pady=15, sticky='nsew')
 dropdown_month.grid(row=0, column=1)
 
-
 # Configure column weights
 for i in range(6):
     root.columnconfigure(i, weight=1)
@@ -266,3 +313,4 @@ root.mainloop()
 # TODO überprüfung wenn erst am nächsten tag ausgecheckt wird(vorheriger tag bis 24 dann neuer eintrag?
 # TODO Alles erklären könnnen
 # TODO Focus entfernen von geklickten Buttons
+# TODO bottom right frame for current worktime, which updates
