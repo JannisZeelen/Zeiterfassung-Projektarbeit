@@ -34,7 +34,8 @@ def get_date_time():
 
 def get_worktime_float(time):
     # Funktion, um die Arbeitszeit in Stunden als Float zu erhalten
-    formatted_time = dt.strptime(time, "%d.%m.%Y-%H:%M:%S")
+
+    formatted_time = dt.strptime(time, "%H:%M:%S")
     total_seconds = td(hours=formatted_time.hour, minutes=formatted_time.minute,
                        seconds=formatted_time.second).total_seconds()
     worktime_float = total_seconds / 3600.0
@@ -117,48 +118,23 @@ def csv_write_check_out():
         if existing_data and len(existing_data[-1]) == 1:
             check_in_dt_str = existing_data[-1][0]
 
-            # Get Check-in Zeit und Datum
+            # Variablen für Check-in, Check-out
             check_in_dt = dt.strptime(check_in_dt_str, "%d.%m.%Y-%H:%M:%S")
-
-            # Get Check-out Zeit und Datum
             check_out_dt = get_date_time()
             check_out_dt_str = check_out_dt.strftime("%d.%m.%Y-%H:%M:%S")
-            check_out_date, check_out_time = check_out_dt_str.split('-')
 
-            # Wenn Check-out an anderem Tag als Check-in
-            if check_out_date != check_in_dt.strftime("%d.%m.%Y"):
-                # Calculate worktime for the entire period between check-in and check-out
-                timedelta = check_out_dt - check_in_dt
-                base_date = dt(1900, 1, 1)
-                worktime = base_date + timedelta
+            # Arbeitszeit als Differenz von Check-in und Check-out
+            timedelta = check_out_dt - check_in_dt
+            base_date = dt(1900, 1, 1)
+            worktime = base_date + timedelta
 
-                # Update the existing check-in entry with the check-out information
-                existing_data[-1] = [check_in_dt_str, check_out_dt_str, worktime.strftime('%H:%M:%S')]
+            # Aktuelle Row in Kopie aktualisieren
+            existing_data[-1] = [check_in_dt_str, check_out_dt_str, worktime.strftime('%H:%M:%S')]
 
-                # An Beginn der Datei springen und neue Daten schreiben
-                csv_file.seek(0)
-                csv_writer = csv.writer(csv_file)
-                csv_writer.writerows(existing_data)
-            else:
-                # Arbeitszeit für heutigen Tag berechnen
-                timedelta = check_out_dt - check_in_dt
-                base_date = dt(1900, 1, 1)
-                worktime = base_date + timedelta
-
-                # Erweitern von bestehendem .csv Eintrag in der existing_data Kopie
-                existing_data[-1].extend([check_out_dt_str, worktime.strftime("%H:%M:%S")])
-
-                # Zum Anfang der .csv Datei springen und neue Daten schreiben
-                csv_file.seek(0)
-                csv_writer = csv.writer(csv_file)
-                csv_writer.writerows(existing_data)
-
-
-#     # Pie Plot in %
-#     ax2.pie(work_hours, labels=last_5_days, autopct='%1.1f%%', startangle=90,
-#             colors=['skyblue', 'lightcoral', 'lightgreen', 'gold', 'lightpink'])
-#     ax2.set_title('Aufteilung Arbeitszeiten letzten 5 Tage')
-#     plt.tight_layout()
+            # An Beginn der Datei springen und neue Daten schreiben
+            csv_file.seek(0)
+            csv_writer = csv.writer(csv_file)
+            csv_writer.writerows(existing_data)
 
 
 def create_plot(work_hours, last_days, last_days_no_year, plot_title):
@@ -191,27 +167,19 @@ def math_plot():
     for row in rows[1:]:
         if len(row) >= 3:
             date_time_str = row[0]
-
-            try:
-                # Attempt to convert date_time_str to datetime object
-                date_time = dt.strptime(date_time_str, "%d.%m.%Y-%H:%M:%S")
-            except ValueError:
-                # Skip entries that do not match the expected format
-                print(f"Skipping entry with unexpected format: {date_time_str}")
-                continue
+            worktime = row[2]
+            # Attempt to convert date_time_str to datetime object
+            date_time = dt.strptime(date_time_str, "%d.%m.%Y-%H:%M:%S")
 
             check_out_date_str = date_time.strftime("%d.%m.%Y")
 
-            # Debug print statements
-            print(f"date_time_str: {date_time_str}")
-            print(f"check_out_date_str: {check_out_date_str}")
-
-            work_hours = get_worktime_float(date_time_str)
+            # Konvertieren der Arbeitszeit zu float
+            work_hours = get_worktime_float(worktime)
 
             # Check if the day is in the selected month and year
             selected_month_year = dt.strptime(dropdown_month.get(), '%B %Y').strftime('%m.%Y')
             if check_out_date_str.endswith(selected_month_year):
-                # Add work hours to the corresponding day
+                # Wenn bereits an diesem Tag gearbeitet worden ist, addiere die work_hours
                 if check_out_date_str in work_hours_per_day:
                     work_hours_per_day[check_out_date_str] += work_hours
                 else:
@@ -304,14 +272,12 @@ root.geometry("483x340+1000+500")
 root.mainloop()
 
 # TODO: Kommentare einsprachig ( deutsch für präsi )
-# TODO: Wenn Arbeitszeit über x dann Pause abziehen
-# TODO: Pause als zweiten Balken ins Matplotlib
-# TODO: Pause Button
 # TODO: Tkinter schöner machen
 # TODO Bild von alfa logo??
 # TODO Project vorstellen: 15 Minuten Zeit
-# TODO überprüfung wenn erst am nächsten tag ausgecheckt wird(vorheriger tag bis 24 dann neuer eintrag? VLLT AUCH NICHT
 # TODO Alles erklären könnnen
 # TODO Focus entfernen von geklickten Buttons
 # TODO bottom right frame for current worktime, which updates
-# TODO calculate break times by getting difference of previous check out time and checkin time of second entry of same day
+# TODO calculate break times by getting difference of previous check out time and checkin time
+#  of second entry of same day
+# TODO: Pause als zweiten Balken ins Matplotlib
