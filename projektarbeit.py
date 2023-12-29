@@ -122,21 +122,50 @@ def csv_write_check_out():
             check_in_dt = dt.strptime(check_in_dt_str, "%d.%m.%Y-%H:%M:%S")
             check_out_dt = get_date_time()
             check_out_dt_str = check_out_dt.strftime("%d.%m.%Y-%H:%M:%S")
-            print(f"checkin {check_in_dt_str}, {check_in_dt} checkout {check_out_dt_str}, {check_out_dt}")
+
             # Arbeitszeit als Differenz von Check-in und Check-out
             timedelta = check_out_dt - check_in_dt
-            print(timedelta)
-            worktime = timedelta.total_seconds() / 3600
-            # base_date = dt(1900, 1, 1)
-            # worktime = base_date + timedelta
-            print(f"{worktime}")
-            # Aktuelle Row in Kopie aktualisieren
-            existing_data[-1] = [check_in_dt_str, check_out_dt_str, worktime]
 
-            # An Beginn der Datei springen und neue Daten schreiben
-            csv_file.seek(0)
-            csv_writer = csv.writer(csv_file)
-            csv_writer.writerows(existing_data)
+            # Differenz in Sekunden umrechnen, dann in Stunden, Minuten und Sekunden aufteilen
+            total_seconds = timedelta.total_seconds()
+            # print(total_seconds / 3600)
+            worktime = total_seconds / 3600
+
+            # hours, remainder = divmod(int(total_seconds), 3600)
+            # minutes, seconds = divmod(remainder, 60)
+            # # Formatieren in das gewünschte worktime Format
+            # worktime = "{:02}:{:02}:{:02}".format(hours, minutes, seconds)
+            # print(worktime)
+
+        # Aktuelle Row in Kopie aktualisieren
+        existing_data[-1] = [check_in_dt_str, check_out_dt_str, worktime]
+
+        # An Beginn der Datei springen und neue Daten schreiben
+        csv_file.seek(0)
+        csv_writer = csv.writer(csv_file)
+        csv_writer.writerows(existing_data)
+
+
+def find_break_times():
+    # TODO calculations and saving of break times
+    with open(file, 'r+', newline='') as csv_file:
+        # Bestehende Daten in Variable zwischenspeichern
+        existing_data = list(csv.reader(csv_file))
+
+        prev_date = None
+        break_times = {}
+        for row in existing_data[1:]:
+            curr_date = dt.strptime(row[0], "%d.%m.%Y-%H:%M:%S").strftime("%d.%m.%Y")
+            if prev_date == curr_date:
+                # Hier gibt es zwei gleiche Datums
+                break_times[curr_date] = None  # TODO Difference
+                print("YA YEET IS THE SAME NUMBER OHHHHHH")
+            prev_date = dt.strptime(row[0], "%d.%m.%Y-%H:%M:%S").strftime("%d.%m.%Y")
+
+            # if existing_data[row][0] ==
+
+
+find_break_times()
 
 
 # TODO in create_plot function find a solution to calculate the average of the work hours
@@ -147,7 +176,8 @@ def create_plot(work_hours, monthly_days, plot_title):
 
     # Bar Plot
     ax.bar(monthly_days_no_year, work_hours, color='skyblue')
-
+    print(work_hours)
+    work_hours = [float(hours) for hours in work_hours]
     average_work_hours = sum(work_hours) / len(work_hours)
     ax.axhline(y=average_work_hours, color='red', linestyle='--', label='Durchschnitt')
 
@@ -172,14 +202,17 @@ def math_plot():
     for row in rows[1:]:
         if len(row) >= 3:
             date_time_str = row[0]
-            work_hours = row[2]
+            work_hours_str = row[2]
             # Attempt to convert date_time_str to datetime object
             date_time = dt.strptime(date_time_str, "%d.%m.%Y-%H:%M:%S")
 
             check_out_date_str = date_time.strftime("%d.%m.%Y")
 
+            # work_hours = work_hours_str
+            work_hours = float(work_hours_str)
+
             # Konvertieren der Arbeitszeit zu float
-            # work_hours = get_worktime_float(worktime)
+            # work_hours = get_worktime_float(work_hours)
 
             # Check if the day is in the selected month and year
             selected_month_year = dt.strptime(dropdown_month.get(), '%B %Y').strftime('%m.%Y')
@@ -192,9 +225,9 @@ def math_plot():
 
     # Prepare lists for plot creation
     monthly_days = list(work_hours_per_day.keys())
-    print(monthly_days)
-    work_hours = [work_hours_per_day[day] for day in monthly_days]
 
+    work_hours = [work_hours_per_day[day] for day in monthly_days]
+    print(monthly_days)
     # Call the function to create the plot
     create_plot(work_hours, monthly_days, f'Arbeitszeiten {dropdown_month.get()}')
 
