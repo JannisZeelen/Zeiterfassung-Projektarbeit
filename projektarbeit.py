@@ -4,8 +4,9 @@ from tkinter import ttk
 from tkinter import PhotoImage
 from datetime import datetime as dt, timedelta as td
 import csv
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg as tkagg
+from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
-import sv_ttk
 
 # Deutsche Lokalisierung für Datumsformatierung
 locale.setlocale(locale.LC_TIME, 'de_DE')
@@ -260,6 +261,9 @@ current_date = get_date()
 
 # Haupt-Tkinter-Fenster erstellen
 root = tk.Tk()
+style = ttk.Style(root)
+root.tk.call('source', 'style/azure.tcl')
+root.tk.call("set_theme", "dark")
 root.title('Zeiterfassung')
 
 # Bildlabel für den Hintergrund in Tkinter
@@ -276,10 +280,6 @@ frame_1_0 = tk.Frame(root, highlightbackground='black', highlightthickness=2, pa
 frame_0_1 = tk.Frame(root, highlightbackground='black', highlightthickness=2, padx=15, pady=5, borderwidth=15)
 frame_1_1 = tk.Frame(root, highlightbackground='black', highlightthickness=2, padx=15, pady=5, borderwidth=15)
 
-# Styling für ttk
-style = ttk.Style()
-sv_ttk.set_theme("dark")  # TODO light/dark/azure?
-# style.configure('TFrame')
 
 # Labels für Datum und Zeit
 label_hello = ttk.Label(frame_0_0, text='Hallo, Jannis!', anchor="center", justify="center")
@@ -293,17 +293,18 @@ label_time = ttk.Label(frame_0_0, anchor='center', justify='center')
 # Buttons und Combobox
 get_time()
 worked_months = get_worked_months()
-button_check_in = ttk.Button(frame_1_0, text='Check-in', command=check_in, compound="center")
+button_check_in = ttk.Button(frame_1_0, style='Accent.TButton', text='Check-in', command=check_in, compound="center")
 if get_status():
     button_check_in.config(text='Check-out')
-button_plot = ttk.Button(frame_0_1, text='Arbeitszeit aufrufen', command=math_plot)
-button_user_quit = ttk.Button(text='Quit', command=user_quit)
+button_plot = ttk.Button(frame_0_1, style='Accent.TButton', text='Arbeitszeit aufrufen', command=math_plot)
+button_user_quit = ttk.Button(text='Quit', style='Accent.TButton', command=user_quit)
 
 dropdown_month = ttk.Combobox(frame_0_1, values=worked_months, state='readonly')
 dropdown_month.current(0)
 
 # Funktion aufrufen, wenn ein Element im Dropdown ausgewählt wird.
 dropdown_month.bind("<<ComboboxSelected>>", highlight_clear)
+
 
 # Grid-Platzierung
 frame_0_0.grid(row=0, column=0, pady=15, padx=15, sticky='nsew')
