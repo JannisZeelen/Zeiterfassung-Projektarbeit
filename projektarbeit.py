@@ -166,7 +166,9 @@ def calculate_break_times():
                         timedelta = timedelta.total_seconds() / 3600
 
                         # Speichern in break_times Dictionary
-                        break_times[curr_date] = timedelta  # TODO Difference
+                        break_times[curr_date] = timedelta
+                    else:
+                        break_times[curr_date] = 0
 
                     # Setzen des aktuellen Datums bevor der Schleifendurchlauf endet
                     prev_date = dt.strptime(row[0], "%d.%m.%Y-%H:%M:%S").strftime("%d.%m.%Y")
@@ -185,10 +187,14 @@ def create_plot(work_hours, monthly_days, break_times, plot_title):
     ax.bar(monthly_days_no_year, work_hours, color='skyblue', label='Arbeitsstunden')
 
     # Pausenzeiten für alle Tage akkumulieren
+    # TODO here goes IF radio1 true then
     total_break_times = [break_time for break_time in break_times.values() if break_time is not None]
 
     # Balkendiagramm für Pausenzeiten erstellen
-    ax.bar(monthly_days_no_year, total_break_times, width=0.3, color='rebeccapurple', label='Pausenzeiten')
+    print(radio_plot_choice.get(), type(radio_plot_choice.get()))
+    if radio_plot_choice.get() == 1:
+        ax.bar(monthly_days_no_year, total_break_times, width=0.3, color='rebeccapurple', label='Pausenzeiten')
+
 
     # Arbeitsstunden in Float konvertieren
     work_hours = [float(hours) for hours in work_hours]
@@ -251,6 +257,7 @@ def math_plot():
     work_hours = [work_hours_per_day[day] for day in monthly_days]
 
     # Funktion zum Erstellen des Diagramms aufrufen
+    # TODO or maybe here if without breaktimes
     create_plot(work_hours, monthly_days, break_times, f'Arbeitszeiten {dropdown_month.get()}')
 
     # Diagramm anzeigen
@@ -263,6 +270,7 @@ current_date = get_date()
 root = tk.Tk()
 style = ttk.Style(root)
 root.tk.call('source', 'style/azure.tcl')
+# root.tk.call("set_theme", "light")
 root.tk.call("set_theme", "dark")
 root.title('Zeiterfassung')
 
@@ -275,72 +283,89 @@ canvas_bg.grid(row=0, column=0, rowspan=6, columnspan=6, sticky='nsew')
 canvas_bg.lower(tk.ALL)
 
 # Frames mit Rahmen erstellen
-frame_0_0 = tk.Frame(root, highlightbackground='black', highlightthickness=2, padx=15, pady=5, borderwidth=15)
-frame_1_0 = tk.Frame(root, highlightbackground='black', highlightthickness=2, padx=15, pady=5, borderwidth=15)
-frame_0_1 = tk.Frame(root, highlightbackground='black', highlightthickness=2, padx=15, pady=5, borderwidth=15)
-frame_1_1 = tk.Frame(root, highlightbackground='black', highlightthickness=2, padx=15, pady=5, borderwidth=15)
+frame_0_0 = tk.Frame(root, highlightbackground='#007FFF', highlightthickness=2, padx=15, pady=5, borderwidth=15)
+frame_1_0 = tk.Frame(root, highlightbackground='#007FFF', highlightthickness=2, padx=15, pady=5, borderwidth=15)
+frame_0_1 = tk.Frame(root, highlightbackground='#007FFF', highlightthickness=2, padx=15, pady=5, borderwidth=15)
 
 
 # Labels für Datum und Zeit
 label_hello = ttk.Label(frame_0_0, text='Hallo, Jannis!', anchor="center", justify="center")
-label_placeholder = ttk.Label(frame_1_1, text='Platzhalter', anchor="center", justify="center")
-label_timetracking = ttk.Label(frame_1_0, text='Zeiterfassung', anchor="center", justify="center")
+label_timetracking = ttk.Label(frame_0_1, text='Zeiterfassung', anchor="center", justify="center")
 label_space = ttk.Label(frame_0_0, text='------------------', anchor="center", justify="center")
-
+label_stats = ttk.Label(frame_1_0, text='Statistiken zur Arbeitszeit', anchor='center', justify='center')
 label_date = ttk.Label(frame_0_0, text=current_date, anchor='center', justify='center')
 label_time = ttk.Label(frame_0_0, anchor='center', justify='center')
 
 # Buttons und Combobox
 get_time()
 worked_months = get_worked_months()
-button_check_in = ttk.Button(frame_1_0, style='Accent.TButton', text='Check-in', command=check_in, compound="center")
+button_check_in = ttk.Button(frame_0_1, style='Accent.TButton', text='Check-in', command=check_in, compound="center")
 if get_status():
     button_check_in.config(text='Check-out')
-button_plot = ttk.Button(frame_0_1, style='Accent.TButton', text='Arbeitszeit aufrufen', command=math_plot)
+button_plot = ttk.Button(frame_1_0, style='Accent.TButton', text='Arbeitszeit aufrufen', command=math_plot)
 button_user_quit = ttk.Button(text='Quit', style='Accent.TButton', command=user_quit)
 
-dropdown_month = ttk.Combobox(frame_0_1, values=worked_months, state='readonly')
+dropdown_month = ttk.Combobox(frame_1_0, values=worked_months, state='readonly')
 dropdown_month.current(0)
+
+# Radiobuttons
+radio_plot_choice = tk.IntVar()
+radio1 = ttk.Radiobutton(frame_1_0, text='Mit Pausenzeiten', variable=radio_plot_choice, value=1)
+radio2 = ttk.Radiobutton(frame_1_0, text='Ohne Pausenzeiten', variable=radio_plot_choice, value=2)
 
 # Funktion aufrufen, wenn ein Element im Dropdown ausgewählt wird.
 dropdown_month.bind("<<ComboboxSelected>>", highlight_clear)
 
-
-# Grid-Platzierung
+# Grid-Platzierungen
+# Frame 0_0
 frame_0_0.grid(row=0, column=0, pady=15, padx=15, sticky='nsew')
-frame_1_0.grid(row=1, column=0, pady=15, padx=15, sticky='nsew')
-frame_0_1.grid(row=0, column=1, pady=15, padx=15, sticky='nsew')
-frame_1_1.grid(row=1, column=1, pady=15, padx=15, sticky='nsew')
 label_hello.grid(row=0, column=0, sticky='nsew')
-label_placeholder.grid(row=0, column=0, sticky='nsew')
 label_space.grid(row=1, column=0, sticky='nsew')
-label_timetracking.grid(row=1, column=0, sticky='nsew')
 label_date.grid(row=2, column=0, sticky='nsew')
 label_time.grid(row=3, column=0, sticky='nsew')
-button_plot.grid(row=3, column=1, sticky='nsew', pady=5)
+
+# Frame 0_1
+frame_0_1.grid(row=0, column=1, pady=15, padx=15, sticky='nsew')
+label_timetracking.grid(row=1, column=0, sticky='nsew')
 button_check_in.grid(row=2, column=0, sticky='nsew', pady=5)
-button_user_quit.grid(row=5, column=0, columnspan=2, padx=15, pady=15, sticky='nsew')
+
+# Frame 1_0
+frame_1_0.grid(row=1, column=0, columnspan=2, pady=0, padx=15, sticky='nsew')
+radio1.grid(row=0, column=0, sticky='nsew', ipadx=20)
+radio2.grid(row=1, column=0, sticky='nsew')
 dropdown_month.grid(row=0, column=1)
+button_plot.grid(row=1, column=1, sticky='nsew', pady=5)
+
+button_user_quit.grid(row=5, column=0, columnspan=2, padx=15, pady=15, sticky='nsew')
+
+radio_plot_choice.set(1)
 
 # Konfiguriere die Gewichtung der Spalten
 for i in range(6):
     root.columnconfigure(i, weight=1)
 
 # Setze die Fenstergeometrie
-root.geometry("483x340+1000+500")  # TODO: Styling
+root.geometry("440x335+1000+500")
+# root.geometry("483x340+1000+500")
 
 # Starte die Tkinter-Event-Schleife
 root.mainloop()
 
-# DONE: Kommentare einsprachig ( deutsch für präsi )
-# TODO: Tkinter schöner machen
-# TODO Bild von alfa logo??
-# TODO Project vorstellen: 15 Minuten Zeit
-# TODO Alles erklären könnnen
-# TODO Focus entfernen von geklickten Buttons
-# TODO Leeren Frame füllen / Checkout Frame vergrößern und aktuelle Arbeitszeit anzeigen?
+# TODO WIP:
+# TODO - Schauen ob es schön aussieht: Nur Pausenzeiten option Radiobuttons
+# TODO - Tkinter schöner machen - Framebreite, sowie geometrybreite anpassen
+# TODO - Sicherstellen, dass ich seaborn benutze für den plot
+# TODO - Tkinter Code sortieren
+# TODO - Code Cleanup / Reihenfolge der Funktionen um das Programm am Besten vorstellen zu können
+# TODO - Testen auf alle möglichen Fehler
+# TODO - Alles erklären können
+# TODO - Projekt vorstellen: 15 Minuten Zeit
+
+# TODO DONE:
+# DONE: Focus entfernen von geklickten Buttons / Temp Fix with same border color
+# DONE: Leeren Frame füllen / Checkout Frame vergrößern und aktuelle Arbeitszeit anzeigen?
 # DONE: calculate break times
 # DONE: Pause als zweiten Balken ins Matplotlib
 
-# TODO: 31.12.2023 - Generate more data for zeiterfassung
-#                  - Fix break_times mismatch, if there is no break on a date, put 0 in the list
+# DONE: Generate more data for zeiterfassung
+# DONE: Fix break_times mismatch, if there is no break on a date, put 0 in the list
