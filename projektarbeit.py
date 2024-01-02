@@ -357,6 +357,7 @@ root.mainloop()
 # TODO - Sicherstellen, dass ich seaborn benutze für den plot
 # TODO - Tkinter Code sortieren
 # TODO - Code Cleanup / Reihenfolge der Funktionen um das Programm am Besten vorstellen zu können
+# TODO - Readme fertig schreiben, Lizenz raus
 # TODO - Testen auf alle möglichen Fehler
 # TODO - Alles erklären können
 # TODO - Projekt vorstellen: 15 Minuten Zeit
