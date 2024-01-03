@@ -234,6 +234,7 @@ def calculate_break_times():
     # Lese vorhandene Daten aus der CSV-Datei
     existing_data = read_csv_data(file)
     prev_date = None
+    prev_check_out = None
     break_times = {}
 
     for row in existing_data[1:]:
