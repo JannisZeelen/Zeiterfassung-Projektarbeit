@@ -36,42 +36,67 @@ def get_date_time():
 
 
 # ======= .csv Funktionen =======
+def read_csv_data(file_path):
+    try:  # Öffne die CSV-Datei im Lese-Modus
+        with open(file, 'r') as csv_file:
+            reader = csv.reader(csv_file)
+            # Lese alle vorhandenen Daten in eine Liste
+            rows = list(reader)
+        return rows
+    # Ausnahmebehandlung
+    except FileNotFoundError:
+        print(f"Dateipfad {file_path} wurde nicht gefunden.")
+    except csv.Error as e:
+        print(f"Fehler beim Lesen der .csv Datei: {e}")
+
+
 def get_status():
     # Überprüfung, ob bereits eingecheckt worden ist, gibt einen Bool-Wert zurück
-
-    # Öffne die CSV-Datei im Lese-Modus
-    with open(file, 'r', newline='') as csv_file:
-        # Lese alle vorhandenen Daten in eine Liste
-        existing_data = list(csv.reader(csv_file))
-
-        # Überprüfe, ob Daten vorhanden sind und ob die letzte Zeile nur ein Element hat
-        if existing_data and len(existing_data[-1]) == 1:
-            # Der Benutzer hat bereits eingecheckt
-            return True
-        else:
-            # Der Benutzer hat noch nicht eingecheckt
-            return False
+    existing_data = read_csv_data(file)
+    # Überprüfe, ob Daten vorhanden sind und ob die letzte Zeile nur ein Element hat
+    if existing_data and len(existing_data[-1]) == 1:
+        # Der Benutzer hat bereits eingecheckt
+        return True
+    else:
+        # Der Benutzer hat noch nicht eingecheckt
+        return False
 
 
 def get_worked_months():  # TODO Kommentare
-    with open(file, 'r') as csv_file:
-        reader = csv.reader(csv_file)
-        rows = list(reader)
+    """
+        Ermittelt eine Liste von Monaten, in denen Arbeit aufgezeichnet wurde,
+        basierend auf den vorhandenen CSV-Daten.
 
+        Rückgabewert:
+            Liste: Eine sortierte Liste formatierter Monatsnamen und Jahre.
+                   Beispiel: ['Dezember 2023', 'November 2023', 'Oktober 2023']
+        """
+    # Liest vorhandene Daten aus der CSV-Datei
+    existing_data = read_csv_data(file)
+
+    # Set zum Speichern eindeutiger Kombinationen von Monat und Jahr
     worked_months_year = set()
-    for row in rows[:]:
+
+    # Iteriert durch vorhandene Daten
+    for row in existing_data[:]:
+        # Überprüft, ob die Zeile die drei Elemente hat
         if len(row) == 3:
+            # Speichern des Datumsstrings
             date_time_str = row[0]
             try:
+                # Konvertiert den Datumsstring in ein Datumsobjekt
                 date_time = dt.strptime(date_time_str, "%d.%m.%Y-%H:%M:%S")
+
+                # Formatieren von Monat und Jahr und Hinzufügen zum Set
                 month_year = date_time.strftime('%m.%Y')
                 worked_months_year.add(month_year)
             except ValueError:
-                # Skip entries that do not match the expected format
+                # Rows mit falschem Datumsformat werden übersprungen
                 continue
-
+    # Sortiert das Set der Monats-Jahr-Kombinationen und formatiert sie
     formatted = sorted([dt.strptime(month, '%m.%Y').strftime('%B %Y') for month in worked_months_year],
                        key=lambda x: dt.strptime(x, '%B %Y'), reverse=True)
+
     return formatted
 
 
@@ -119,7 +144,7 @@ def create_plot(work_hours, monthly_days, break_times, plot_title):
     # Monatsdaten ohne Jahr extrahieren
     monthly_days_no_year = [day[:-4] for day in monthly_days]
 
-    # Figure- und Axes-Objekt erstellen
+    # Figureobjekt und Koordinatensystem erstellen
     fig, ax = plt.subplots(figsize=(10, 5))
 
     # Balkendiagramm für Arbeitsstunden erstellen
@@ -128,9 +153,9 @@ def create_plot(work_hours, monthly_days, break_times, plot_title):
     # Pausenzeiten für alle Tage akkumulieren
     total_break_times = [break_time for break_time in break_times.values() if break_time is not None]
 
-    # Balkendiagramm für Pausenzeiten erstellen
     # Pausenzeiten nur plotten, wenn dementsprechender Radiobutton ausgewählt ist.
     if radio_plot_choice.get() == 1:
+        # Balkendiagramm für Pausenzeiten erstellen
         ax.bar(monthly_days_no_year, total_break_times, width=0.3, color='rebeccapurple', label='Pausenzeiten')
 
     # Arbeitsstunden in Float konvertieren
@@ -152,20 +177,19 @@ def create_plot(work_hours, monthly_days, break_times, plot_title):
 
     # Legende hinzufügen und Layout anpassen
     ax.legend()
+    # Layout-Anordnung sicherstellen
     plt.tight_layout()
 
 
 def math_plot():
     # Funktion zum Berechnen der gearbeiteten Stunden, Lesen von Zeilen mit demselben Monat
-    with open(file, 'r') as csv_file:
-        reader = csv.reader(csv_file)
-        rows = list(reader)
+    existing_data = read_csv_data(file)
 
-    # Leeres Dictionary für zukünftige Daten: Datum: Arbeitszeit
+    # Leeres Dictionary für zukünftige Daten: "Datum: Arbeitszeit"
     work_hours_per_day = {}
 
     # Datum und Arbeitszeit in Listen
-    for row in rows[1:]:
+    for row in existing_data[1:]:
         if len(row) == 3:
             date_time_str = row[0]
             work_hours_str = row[2]
@@ -201,39 +225,45 @@ def math_plot():
 
 
 def calculate_break_times():
-    with open(file, 'r+', newline='') as csv_file:
-        # Bestehende Daten in Variable zwischenspeichern
-        existing_data = list(csv.reader(csv_file))
-        prev_date = None
-        break_times = {}
-        for row in existing_data[1:]:
-            # Nur abgeschlossene Arbeitszeiten
-            if len(row) == 3:
-                selected_month_year = dt.strptime(dropdown_month.get(), '%B %Y').strftime('%m.%Y')
-                check_out_date_str = row[1]
-                date_time = dt.strptime(check_out_date_str, "%d.%m.%Y-%H:%M:%S")
-                check_out_date_str = date_time.strftime("%d.%m.%Y")
+    """
+        Berechnet die Pausenzeiten für jeden Tag im ausgewählten Monat und Jahr.
 
-                # Wenn der gewünschte Monat Jahr übereinstimmt
-                if check_out_date_str.endswith(selected_month_year):
-                    # Setzen des aktuellen Datums in benötigten Formaten
-                    curr_date = dt.strptime(row[0], "%d.%m.%Y-%H:%M:%S").strftime("%d.%m.%Y")
-                    curr_check_in = dt.strptime(row[0], "%d.%m.%Y-%H:%M:%S")
+        Returns:
+        break_times (dict): Ein Dictionary, das jedem Tag die entsprechende Pausenzeit in Stunden zuordnet.
+        """
+    # Lese vorhandene Daten aus der CSV-Datei
+    existing_data = read_csv_data(file)
+    prev_date = None
+    break_times = {}
 
-                    # Wenn das Datum an zwei Tagen gleich ist, berechne die Pause
-                    if prev_date == curr_date:
-                        timedelta = curr_check_in - prev_check_out
-                        timedelta = timedelta.total_seconds() / 3600
+    for row in existing_data[1:]:
+        # Überprüfe, ob es sich um abgeschlossene Arbeitszeiten handelt
+        if len(row) == 3:
+            selected_month_year = dt.strptime(dropdown_month.get(), '%B %Y').strftime('%m.%Y')
+            check_out_date_str = row[1]
+            date_time = dt.strptime(check_out_date_str, "%d.%m.%Y-%H:%M:%S")
+            check_out_date_str = date_time.strftime("%d.%m.%Y")
 
-                        # Speichern in break_times Dictionary
-                        break_times[curr_date] = timedelta
-                    else:
-                        break_times[curr_date] = 0
+            # Wenn der gewünschte Monat Jahr übereinstimmt
+            if check_out_date_str.endswith(selected_month_year):
+                # Setzen des aktuellen Datums in benötigten Formaten
+                curr_date = dt.strptime(row[0], "%d.%m.%Y-%H:%M:%S").strftime("%d.%m.%Y")
+                curr_check_in = dt.strptime(row[0], "%d.%m.%Y-%H:%M:%S")
 
-                    # Setzen des aktuellen Datums bevor der Schleifendurchlauf endet
-                    prev_date = dt.strptime(row[0], "%d.%m.%Y-%H:%M:%S").strftime("%d.%m.%Y")
-                    prev_check_out = dt.strptime(row[1], "%d.%m.%Y-%H:%M:%S")
-        return break_times
+                # Wenn das Datum an zwei Tagen gleich ist, berechne die Pause
+                if prev_date == curr_date:
+                    timedelta = curr_check_in - prev_check_out
+                    timedelta = timedelta.total_seconds() / 3600
+
+                    # Speichern in break_times Dictionary
+                    break_times[curr_date] = timedelta
+                else:
+                    break_times[curr_date] = 0
+
+                # Setzen des aktuellen Datums bevor der Schleifendurchlauf endet
+                prev_date = dt.strptime(row[0], "%d.%m.%Y-%H:%M:%S").strftime("%d.%m.%Y")
+                prev_check_out = dt.strptime(row[1], "%d.%m.%Y-%H:%M:%S")
+    return break_times
 
 
 # ======= Tkinter-Funktionen =======
@@ -252,6 +282,8 @@ def check_in():
 
 
 def user_quit():
+    # Beenden der Uhrzeit Funktion
+    root.after_cancel(after_id)
     # Tkinter schließen
     root.destroy()
 
@@ -306,7 +338,8 @@ label_space = ttk.Label(frame_0_0, text='------------------', anchor="center", j
 current_date = get_date()
 label_date = ttk.Label(frame_0_0, text=current_date, anchor='center', justify='center')
 label_time = ttk.Label(frame_0_0, anchor='center', justify='center')
-get_time()  # Aufruf zum Setzen und Aktualisieren der Uhrzeit
+# Speichern der After-ID
+after_id = get_time()  # Aufruf zum Setzen und Aktualisieren der Uhrzeit
 
 # Frame 0_1
 frame_0_1 = tk.Frame(root, highlightbackground='#007FFF', highlightthickness=2, padx=15, pady=5, borderwidth=15)
@@ -360,20 +393,19 @@ root.mainloop()
 
 # TODO WIP:
 # TODO - Code Cleanup / Reihenfolge der Funktionen um das Programm am Besten vorstellen zu können
-# TODO - Readme fertig schreiben, Lizenz raus
 # TODO - Testen auf alle möglichen Fehler
-# TODO - Alles erklären können
-# TODO - Projekt vorstellen: 15 Minuten Zeit
+# TODO - Testvorstellung Albert 04.01. - 14:00
+# TODO - Projekt vorstellen: 15 Minuten Zeit, 09:30 am Freitag, den 05.01.
 
 # TODO DONE:
 # DONE: Focus entfernen von geklickten Buttons / Temp Fix with same border color
 # DONE: Leeren Frame füllen / Checkout Frame vergrößern und aktuelle Arbeitszeit anzeigen?
 # DONE: calculate break times
 # DONE: Pause als zweiten Balken ins Matplotlib
-
 # DONE: Generate more data for zeiterfassung
 # DONE: Fix break_times mismatch, if there is no break on a date, put 0 in the list
 # DONE: Schauen, ob es schön aussieht: Nur Pausenzeiten option Radiobuttons
 # DONE: Tkinter schöner machen - Frame-width, sowie Geometry-breite anpassen
 # DONE: Sicherstellen, dass ich seaborn benutze für den plot
 # DONE: Tkinter Code sortieren
+# DONE: Readme fertig schreiben
