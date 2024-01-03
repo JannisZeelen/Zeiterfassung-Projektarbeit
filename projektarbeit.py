@@ -362,7 +362,7 @@ dropdown_month.current(0)
 dropdown_month.bind("<<ComboboxSelected>>", highlight_clear)  # Highlight entfernen nach Combobox-Auswahl
 button_plot = ttk.Button(frame_1_0, style='Accent.TButton', text='Arbeitszeit aufrufen', command=math_plot)
 
-button_user_quit = ttk.Button(text='Quit', style='Accent.TButton', command=user_quit)
+button_user_quit = ttk.Button(text='Beenden', style='Accent.TButton', command=user_quit)
 
 # Grid-Platzierungen
 # Frame 0_0
