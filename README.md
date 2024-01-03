@@ -1,47 +1,38 @@
-# Zeiterfassungsprogramm
+**Zeiterfassungs-App**
 
-Dies ist ein einfaches Zeiterfassungsprogramm, das mit Python und Tkinter erstellt wurde. Es ermöglicht Benutzern, ihre Arbeitszeiten zu verfolgen und Arbeitsstatistiken für bestimmte Monate anzuzeigen.
+## Beschreibung
+Die Zeiterfassungs-App ist eine einfache Anwendung, die es Benutzern ermöglicht, ihre Arbeitszeiten zu verfolgen und statistische Analysen über ihre Arbeitszeiten durchzuführen. Die App wurde mit Python und dem Tkinter-Framework für die Benutzeroberfläche entwickelt.
 
 ## Funktionen
+1. **Check-in und Check-out:**
+   - Die Benutzer können sich durch Klicken auf den "Check-in" oder "Check-out" Button ein- bzw. auschecken.
+   - Die App speichert die Check-in- und Check-out-Zeiten in einer CSV-Datei.
 
-- **Check-in / Check-out:** Benutzer können sich ein- und auschecken, um ihre Arbeitszeiten zu erfassen.
-- **Arbeitszeitberechnung:** Das Programm berechnet automatisch die Arbeitszeit zwischen Check-in und Check-out.
-- **Monatsstatistik:** Benutzer können Statistiken über ihre Arbeitszeiten für bestimmte Monate anzeigen.
-- **Pausenberechnung:** Das Programm berechnet die Pausenzeit zwischen aufeinanderfolgenden Check-ins und Check-outs.
+2. **Arbeitszeitstatistiken:**
+   - Die App bietet statistische Analysen über die gearbeiteten Stunden anhand von Diagrammen.
+   - Benutzer können wählen, ob Pausenzeiten in den Diagrammen berücksichtigt werden sollen.
 
-## Verwendung
+3. **Monatsauswahl:**
+   - Benutzer können den gewünschten Monat aus einer Dropdown-Liste auswählen.
+   - Die App zeigt dann Arbeitszeitstatistiken für den ausgewählten Monat an.
 
-1. **Check-in / Check-out:**
-   - Klicken Sie auf die Schaltfläche "Check-in", um sich einzuchecken.
-   - Klicken Sie erneut auf die Schaltfläche, um sich auszuchecken.
+## Dateistruktur
+- **zeiterfassung.py:** Hauptprogramm, das die Benutzeroberfläche und die Kernfunktionalitäten enthält.
+- **zeiterfassung.csv:** CSV-Datei zur Speicherung von Check-in- und Check-out-Zeiten.
 
-2. **Monatsstatistik:**
-   - Wählen Sie den gewünschten Monat im Dropdown-Menü aus.
-   - Klicken Sie auf "Arbeitszeit aufrufen", um die Statistik für den ausgewählten Monat anzuzeigen.
+## Abhängigkeiten
+Die App verwendet die folgenden Python-Bibliotheken:
+- `tkinter`: Für die Erstellung der Benutzeroberfläche.
+- `csv`: Zum Lesen und Schreiben von CSV-Dateien.
+- `seaborn` und `matplotlib`: Für die Erstellung von Diagrammen.
 
-3. **Beenden:**
-   - Klicken Sie auf die "Quit"-Schaltfläche, um das Programm zu beenden.
-
-## Voraussetzungen
-
-- Python 3.x
-- matplotlib~=3.8.0
-- sv_ttk
-- Die erforderlichen Python-Pakete können mit `pip install -r requirements.txt` installiert werden.
-- pip kann mit `conda install pip` installiert werden.
-
-## Lokalisierung
-
-Das Programm verwendet die deutsche Lokalisierung für die Datumsformatierung.
-
-## Datenpersistenz
-
-Die Zeiterfassungsdaten werden in einer CSV-Datei (`zeiterfassung.csv`) gespeichert.
-
+## Anwendung
+1. Führen Sie das Hauptprogramm `zeiterfassung.py` aus.
+2. Klicken Sie auf den "Check-in" Button, um sich einzuchecken, oder auf den "Check-out" Button, um sich auszuchecken.
+3. Wählen Sie einen Monat aus der Dropdown-Liste aus.
+4. Klicken Sie auf den "Arbeitszeit aufrufen" Button, um die Statistiken anzuzeigen.
+5. Um das Programm zu beenden klicken Sie auf den "Schließen" Button.
 ## Lizenz
+Dieses Projekt steht unter der [MIT-Lizenz](LICENSE).
 
-Dieses Programm ist unter der MIT-Lizenz lizenziert - siehe [LICENSE](LICENSE) für weitere Details.
-
-## Autor
-
-- Jannis Zeelen
+Viel Spaß beim Verwenden der Zeiterfassungs-App!
