@@ -140,48 +140,14 @@ def csv_write_check_out():
 
 
 # ======= Matplotlib-Funktionen =======
-def create_plot(work_hours, monthly_days, break_times, plot_title):
-    # Monatsdaten ohne Jahr extrahieren
-    monthly_days_no_year = [day[:-4] for day in monthly_days]
-
-    # Figureobjekt und Koordinatensystem erstellen
-    fig, ax = plt.subplots(figsize=(10, 5))
-
-    # Balkendiagramm für Arbeitsstunden erstellen
-    ax.bar(monthly_days_no_year, work_hours, color='skyblue', label='Arbeitsstunden')
-
-    # Pausenzeiten für alle Tage akkumulieren
-    total_break_times = [break_time for break_time in break_times.values() if break_time is not None]
-
-    # Pausenzeiten nur plotten, wenn dementsprechender Radiobutton ausgewählt ist.
-    if radio_plot_choice.get() == 1:
-        # Balkendiagramm für Pausenzeiten erstellen
-        ax.bar(monthly_days_no_year, total_break_times, width=0.3, color='rebeccapurple', label='Pausenzeiten')
-
-    # Arbeitsstunden in Float konvertieren
-    work_hours = [float(hours) for hours in work_hours]
-
-    # Durchschnittliche Arbeitsstunden berechnen
-    average_work_hours = sum(work_hours) / len(work_hours)
-
-    # Durchschnittslinie hinzufügen
-    ax.axhline(y=average_work_hours, color='orange', linestyle='--', label='Durchschnitt')
-
-    # Achsentitel und Diagrammtitel setzen
-    ax.set_xlabel('Datum')
-    ax.set_ylabel('Gesamtarbeitsstunden')
-    ax.set_title(plot_title)
-
-    # X-Achsenbeschriftungen drehen und rechts ausrichten
-    plt.xticks(rotation=45, ha='right')
-
-    # Legende hinzufügen und Layout anpassen
-    ax.legend()
-    # Layout-Anordnung sicherstellen
-    plt.tight_layout()
-
-
 def math_plot():
+    """
+        Erstellt ein Diagramm der gearbeiteten Stunden basierend auf den vorhandenen Zeiterfassungsdaten.
+
+        Die Funktion liest die Zeiterfassungsdaten aus der CSV-Datei, extrahiert die gearbeiteten Stunden pro Tag,
+        berechnet Pausenzeiten und erstellt ein Diagramm mit Matplotlib. Das Diagramm zeigt die Gesamtarbeitsstunden
+        pro Tag für den ausgewählten Monat und ermöglicht die Option, Pausenzeiten im Diagramm darzustellen.
+        """
     # Funktion zum Berechnen der gearbeiteten Stunden, Lesen von Zeilen mit demselben Monat
     existing_data = read_csv_data(file)
 
@@ -193,9 +159,8 @@ def math_plot():
         if len(row) == 3:
             date_time_str = row[0]
             work_hours_str = row[2]
-            # Versuch, date_time_str in ein datetime-Objekt zu konvertieren
+            # date_time_str -> datetime -> Tag.Monat.Jahr
             date_time = dt.strptime(date_time_str, "%d.%m.%Y-%H:%M:%S")
-
             check_out_date_str = date_time.strftime("%d.%m.%Y")
 
             # Arbeitszeit = Arbeitszeit_str
@@ -229,7 +194,8 @@ def calculate_break_times():
         Berechnet die Pausenzeiten für jeden Tag im ausgewählten Monat und Jahr.
 
         Returns:
-        break_times (dict): Ein Dictionary, das jedem Tag die entsprechende Pausenzeit in Stunden zuordnet.
+        break_times (dict): Ein Dictionary, das jedem Tag die entsprechende
+        Pausenzeit in Stunden zuordnet.
         """
     # Lese vorhandene Daten aus der CSV-Datei
     existing_data = read_csv_data(file)
@@ -254,10 +220,10 @@ def calculate_break_times():
                 # Wenn das Datum an zwei Tagen gleich ist, berechne die Pause
                 if prev_date == curr_date:
                     timedelta = curr_check_in - prev_check_out
-                    timedelta = timedelta.total_seconds() / 3600
+                    timedelta_hours = timedelta.total_seconds() / 3600
 
                     # Speichern in break_times Dictionary
-                    break_times[curr_date] = timedelta
+                    break_times[curr_date] = timedelta_hours
                 else:
                     break_times[curr_date] = 0
 
@@ -265,6 +231,56 @@ def calculate_break_times():
                 prev_date = dt.strptime(row[0], "%d.%m.%Y-%H:%M:%S").strftime("%d.%m.%Y")
                 prev_check_out = dt.strptime(row[1], "%d.%m.%Y-%H:%M:%S")
     return break_times
+
+
+def create_plot(work_hours, monthly_days, break_times, plot_title):
+    """
+        Erstellt ein Balkendiagramm der gearbeiteten Stunden pro Tag mit Matplotlib.
+
+        Parameters:
+            work_hours (list): Eine Liste von gearbeiteten Stunden pro Tag.
+            monthly_days (list): Eine Liste von Datumsangaben, die den Tagen im Monat entsprechen.
+            break_times (dict): Ein Dictionary, das den Pausenzeiten pro Tag zugeordnet ist.
+            plot_title (str): Der Titel des Diagramms.
+        """
+    # Jahr aus Datumsliste entfernen
+    monthly_days_no_year = [day[:-4] for day in monthly_days]
+
+    # Figureobjekt und Koordinatensystem erstellen
+    fig, ax = plt.subplots(figsize=(10, 5))
+
+    # Balkendiagramm für Arbeitsstunden erstellen
+    ax.bar(monthly_days_no_year, work_hours, color='skyblue', label='Arbeitsstunden')
+
+    # Pausenzeiten für alle Tage akkumulieren # TODO
+    total_break_times = [break_time for break_time in break_times.values() if break_time is not None]
+
+    # Pausenzeiten nur plotten, wenn dementsprechender Radiobutton ausgewählt ist.
+    if radio_plot_choice.get() == 1:
+        # Balkendiagramm für Pausenzeiten erstellen
+        ax.bar(monthly_days_no_year, total_break_times, width=0.3, color='rebeccapurple', label='Pausenzeiten')
+
+    # Arbeitsstunden in Float konvertieren
+    work_hours = [float(hours) for hours in work_hours]
+
+    # Durchschnittliche Arbeitsstunden berechnen
+    average_work_hours = sum(work_hours) / len(work_hours)
+
+    # Durchschnittslinie hinzufügen
+    ax.axhline(y=average_work_hours, color='orange', linestyle='--', label='Durchschnitt')
+
+    # Achsentitel und Diagrammtitel setzen
+    ax.set_xlabel('Datum')
+    ax.set_ylabel('Gesamtarbeitsstunden')
+    ax.set_title(plot_title)
+
+    # X-Achsenbeschriftungen drehen und rechts ausrichten
+    plt.xticks(rotation=45, ha='right')
+
+    # Legende hinzufügen und Layout anpassen
+    ax.legend()
+    # Layout-Anordnung sicherstellen
+    plt.tight_layout()
 
 
 # ======= Tkinter-Funktionen =======
@@ -305,7 +321,7 @@ root.tk.call("set_theme", "dark")
 root.title('Zeiterfassung')
 
 # Bildlabel für den Hintergrund in Tkinter
-imagepath = 'img/bg.png'
+imagepath = 'img/background.png'
 img = PhotoImage(file=imagepath)
 canvas_bg = tk.Canvas(root, width=img.width() * 0.5, height=img.height() * 0.5)
 canvas_bg.create_image(0, 0, anchor=tk.NW, image=img)
@@ -347,15 +363,17 @@ frame_0_1 = tk.Frame(root, highlightbackground='#007FFF', highlightthickness=2, 
 label_timetracking = ttk.Label(frame_0_1, text='Zeiterfassung', anchor="center", justify="center")
 button_check_in = ttk.Button(frame_0_1, style='Accent.TButton', text='Check-in', command=check_in,
                              compound="center")
-if get_status():
+if get_status():  # Für den Fall, dass bereits eingecheckt wurde
     button_check_in.config(text='Check-out')
 
 # Frame 1_0
 frame_1_0 = tk.Frame(root, highlightbackground='#007FFF', highlightthickness=2, padx=15, pady=0, borderwidth=5)
 label_stats = ttk.Label(frame_1_0, text='Statistiken zur Arbeitszeit', anchor='center', justify='center')
+# Kontrollvariable für Radiobuttons
 radio_plot_choice = tk.IntVar()
 radio1 = ttk.Radiobutton(frame_1_0, text='Mit Pausenzeiten', variable=radio_plot_choice, value=1)
 radio2 = ttk.Radiobutton(frame_1_0, text='Ohne Pausenzeiten', variable=radio_plot_choice, value=2)
+# Dropdown Menü
 worked_months = get_worked_months()  # Monate auslesen für Dropdown-Feld
 dropdown_month = ttk.Combobox(frame_1_0, values=worked_months, state='readonly')
 dropdown_month.current(0)
@@ -392,21 +410,4 @@ button_user_quit.grid(row=5, column=0, columnspan=2, padx=15, pady=15, sticky='n
 # Starte die Tkinter-Event-Schleife
 root.mainloop()
 
-# TODO WIP:
-# TODO - Code Cleanup / Reihenfolge der Funktionen um das Programm am Besten vorstellen zu können
-# TODO - Testen auf alle möglichen Fehler
-# TODO - Testvorstellung Albert 04.01. - 14:00
 # TODO - Projekt vorstellen: 15 Minuten Zeit, 09:30 am Freitag, den 05.01.
-
-# TODO DONE:
-# DONE: Focus entfernen von geklickten Buttons / Temp Fix with same border color
-# DONE: Leeren Frame füllen / Checkout Frame vergrößern und aktuelle Arbeitszeit anzeigen?
-# DONE: calculate break times
-# DONE: Pause als zweiten Balken ins Matplotlib
-# DONE: Generate more data for zeiterfassung
-# DONE: Fix break_times mismatch, if there is no break on a date, put 0 in the list
-# DONE: Schauen, ob es schön aussieht: Nur Pausenzeiten option Radiobuttons
-# DONE: Tkinter schöner machen - Frame-width, sowie Geometry-breite anpassen
-# DONE: Sicherstellen, dass ich seaborn benutze für den plot
-# DONE: Tkinter Code sortieren
-# DONE: Readme fertig schreiben
