@@ -62,7 +62,7 @@ def get_status():
         return False
 
 
-def get_worked_months():  # TODO Kommentare
+def get_worked_months():
     """
         Ermittelt eine Liste von Monaten, in denen Arbeit aufgezeichnet wurde,
         basierend auf den vorhandenen CSV-Daten.
@@ -252,7 +252,7 @@ def create_plot(work_hours, monthly_days, break_times, plot_title):
     # Balkendiagramm für Arbeitsstunden erstellen
     ax.bar(monthly_days_no_year, work_hours, color='skyblue', label='Arbeitsstunden')
 
-    # Pausenzeiten für alle Tage akkumulieren # TODO
+    # Pausenzeiten für alle Tage setzen
     total_break_times = [break_time for break_time in break_times.values() if break_time is not None]
 
     # Pausenzeiten nur plotten, wenn dementsprechender Radiobutton ausgewählt ist.
