@@ -36,9 +36,9 @@ def get_time():
 
 
 # ======= .csv Funktionen =======
-def read_csv_data(file_path):
+def read_csv_data(file_path, mode):
     try:  # Öffne die CSV-Datei im Lese-Modus
-        with open(file, 'r') as csv_file:
+        with open(file, mode) as csv_file:
             reader = csv.reader(csv_file)
             # Lese alle vorhandenen Daten in eine Liste
             rows = list(reader)
@@ -52,7 +52,7 @@ def read_csv_data(file_path):
 
 def get_status():
     # Überprüfung, ob bereits eingecheckt worden ist, gibt einen Bool-Wert zurück
-    existing_data = read_csv_data(file)
+    existing_data = read_csv_data(file, 'r')
     # Überprüfe, ob Daten vorhanden sind und ob die letzte Zeile nur ein Element hat
     if existing_data and len(existing_data[-1]) == 1:
         # Der Benutzer hat bereits eingecheckt
@@ -72,7 +72,7 @@ def get_worked_months():
                    Beispiel: ['Dezember 2023', 'November 2023', 'Oktober 2023']
         """
     # Liest vorhandene Daten aus der CSV-Datei
-    existing_data = read_csv_data(file)
+    existing_data = read_csv_data(file, 'r')
 
     # Set zum Speichern eindeutiger Kombinationen von Monat und Jahr
     worked_months_year = set()
@@ -149,7 +149,7 @@ def math_plot():
         pro Tag für den ausgewählten Monat und ermöglicht die Option, Pausenzeiten im Diagramm darzustellen.
         """
     # Funktion zum Berechnen der gearbeiteten Stunden, Lesen von Zeilen mit demselben Monat
-    existing_data = read_csv_data(file)
+    existing_data = read_csv_data(file, 'r')
 
     # Leeres Dictionary für zukünftige Daten: "Datum: Arbeitszeit"
     work_hours_per_day = {}
@@ -198,7 +198,7 @@ def calculate_break_times():
         Pausenzeit in Stunden zuordnet.
         """
     # Lese vorhandene Daten aus der CSV-Datei
-    existing_data = read_csv_data(file)
+    existing_data = read_csv_data(file, 'r')
     prev_date = None
     prev_check_out = None
     break_times = {}
