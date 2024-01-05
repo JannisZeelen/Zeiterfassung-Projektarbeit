@@ -22,17 +22,17 @@ def get_date():
     return current_dt.strftime("%d.%m.%Y")
 
 
+def get_date_time():
+    current_dt = dt.now()
+    return current_dt
+
+
 def get_time():
     current_dt = dt.now()
     current_time = current_dt.strftime("%H:%M:%S")
     label_time.config(text=current_time)
     root.after(1000, get_time)
     return current_time
-
-
-def get_date_time():
-    current_dt = dt.now()
-    return current_dt
 
 
 # ======= .csv Funktionen =======
@@ -163,7 +163,7 @@ def math_plot():
             date_time = dt.strptime(date_time_str, "%d.%m.%Y-%H:%M:%S")
             check_out_date_str = date_time.strftime("%d.%m.%Y")
 
-            # Arbeitszeit = Arbeitszeit_str
+            # Arbeitszeitstring zu float
             work_hours = float(work_hours_str)
 
             # Check, ob der Tag im ausgewählten Monat und Jahr liegt
@@ -409,5 +409,3 @@ button_user_quit.grid(row=5, column=0, columnspan=2, padx=15, pady=15, sticky='n
 
 # Starte die Tkinter-Event-Schleife
 root.mainloop()
-
-# TODO - Projekt vorstellen: 15 Minuten Zeit, 09:30 am Freitag, den 05.01.
